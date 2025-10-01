@@ -249,10 +249,10 @@ imaxdiv_t __cdecl imaxdiv(intmax_t numer, intmax_t denom)
    result.quot = numer / denom;
    result.rem = numer % denom;
 
-   if (numer < 0 && result.rem > 0) {
-      // did division wrong; must fix up
-      ++result.quot;
-      result.rem -= denom;
+   // Ensure remainder has same sign as numerator and abs(rem) < abs(denom)
+   if (result.rem != 0 && ((numer < 0 && result.rem > 0) || (numer > 0 && result.rem < 0))) {
+      result.quot -= (numer > 0 ? 1 : -1);
+      result.rem += denom;
    }
 
    return result;
