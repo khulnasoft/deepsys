@@ -17,8 +17,9 @@ make package
 cd ..
 test/deepsys_trace_regression.sh build/userspace/deepsys/deepsys build/userspace/deepsys/chisels $TRAVIS_BRANCH
 rm -rf build
-pushd $(mktemp -d --tmpdir deepsys.XXXXXXXXXX)
-wget http://download.draios.com/dependencies/zlib-1.2.8.tar.gz
+TMP_DEPS_DIR=$(mktemp -d --tmpdir deepsys.XXXXXXXXXX)
+pushd $TMP_DEPS_DIR
+wget https://s3.amazonaws.com/download.draios.com/dependencies/zlib-1.2.8.tar.gz
 tar -xzf zlib-1.2.8.tar.gz
 cd zlib-1.2.8
 ./configure
@@ -39,7 +40,7 @@ make
 sudo cp -r include/* /usr/local/include/
 sudo cp src/libb64.a /usr/local/lib/
 cd ..
-wget http://download.draios.com/dependencies/jq-1.5.tar.gz
+wget https://s3.amazonaws.com/download.draios.com/dependencies/jq-1.5.tar.gz
 tar -xzf jq-1.5.tar.gz
 cd jq-1.5
 ./configure --disable-maintainer-mode
@@ -49,6 +50,7 @@ sudo cp ./jv.h /usr/local/include/
 sudo cp .libs/libjq.a /usr/local/lib/
 cd ..
 popd
+rm -rf $TMP_DEPS_DIR
 rm -rf userspace/libsinsp/third-party/jsoncpp
 sudo apt-get install libncurses5-dev libluajit-5.1-dev libcurl4-openssl-dev libssl-dev
 mkdir build
