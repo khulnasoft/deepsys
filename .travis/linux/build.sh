@@ -18,7 +18,7 @@ cd ..
 test/deepsys_trace_regression.sh build/userspace/deepsys/deepsys build/userspace/deepsys/chisels $TRAVIS_BRANCH
 rm -rf build
 pushd $(mktemp -d --tmpdir deepsys.XXXXXXXXXX)
-wget http://download.draios.com/dependencies/zlib-1.2.8.tar.gz
+wget https://s3.amazonaws.com/download.draios.com/dependencies/zlib-1.2.8.tar.gz
 tar -xzf zlib-1.2.8.tar.gz
 cd zlib-1.2.8
 ./configure
