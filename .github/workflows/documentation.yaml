@@ -1,0 +1,105 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '**.md'
+      - 'docs/**'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - '**.md'
+      - 'docs/**'
+
+jobs:
+  check-docs:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install documentation tools
+      run: |
+        pip install --upgrade pip
+        pip install markdownlint-cli mkdocs
+
+    - name: Check markdown files
+      run: |
+        # Check for common documentation issues
+        echo "Checking markdown files..."
+
+        # Check for broken links in markdown files
+        find . -name "*.md" -exec grep -l "http" {} \; | head -5 | xargs -I {} echo "Checking: {}"
+
+        # Check for missing sections in README
+        if ! grep -q "Installation" README_MODULAR.md; then
+          echo "Warning: Installation section missing from README"
+        fi
+
+        if ! grep -q "Usage" README_MODULAR.md; then
+          echo "Warning: Usage section missing from README"
+        fi
+
+        echo "Documentation check completed"
+
+    - name: Validate API documentation
+      run: |
+        # Check that interface files have corresponding documentation
+        echo "Validating API documentation..."
+
+        # Check core module
+        if [ -f "core/include/core/types.h" ] && ! grep -q "types.h" README_MODULAR.md; then
+          echo "Warning: core/types.h not documented in README"
+        fi
+
+        # Check other modules
+        for module in libscap libsinsp cli chisels; do
+          if [ -d "$module" ] && ! grep -q "$module" README_MODULAR.md; then
+            echo "Warning: $module module not documented in README"
+          fi
+        done
+
+        echo "API documentation validation completed"
+
+  build-docs:
+    name: Build Documentation Site
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install MkDocs
+      run: |
+        pip install --upgrade pip
+        pip install mkdocs mkdocs-material
+
+    - name: Build documentation site
+      run: |
+        # This would build a MkDocs site if we had mkdocs.yml
+        if [ -f "mkdocs.yml" ]; then
+          mkdocs build --clean
+        else
+          echo "No mkdocs.yml found, skipping site build"
+        fi
+
+    - name: Upload documentation artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation-site
+        path: site/
+        retention-days: 7

@@ -1,0 +1,13 @@
+{
+	"InstallScripts" : 
+	[
+		"/Users/dev/deepsys/build/cmake_install.cmake",
+		"/Users/dev/deepsys/build/core/cmake_install.cmake",
+		"/Users/dev/deepsys/build/driver/cmake_install.cmake",
+		"/Users/dev/deepsys/build/libscap/cmake_install.cmake",
+		"/Users/dev/deepsys/build/libsinsp/cmake_install.cmake",
+		"/Users/dev/deepsys/build/cli/cmake_install.cmake",
+		"/Users/dev/deepsys/build/chisels/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

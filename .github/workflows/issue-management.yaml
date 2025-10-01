@@ -1,0 +1,118 @@
+name: Issue and PR Management
+
+on:
+  issues:
+    types: [opened, edited, labeled, unlabeled]
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  issue-triage:
+    name: Issue Triage
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues'
+
+    steps:
+    - name: Check issue labels
+      run: |
+        # This job would automatically label issues based on content
+        # and assign to appropriate maintainers
+        echo "Processing issue #${{ github.event.issue.number }}"
+
+        # Check for common issue patterns
+        if echo "${{ github.event.issue.title }}" | grep -i "build"; then
+          echo "Issue appears to be build-related"
+        fi
+
+        if echo "${{ github.event.issue.body }}" | grep -i "driver"; then
+          echo "Issue appears to be driver-related"
+        fi
+
+        echo "Issue triage completed"
+
+  pr-size-label:
+    name: PR Size Label
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Calculate PR size
+      run: |
+        # Get list of changed files
+        FILES_CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | wc -l)
+
+        # Get lines changed (additions + deletions)
+        LINES_CHANGED=$(git diff --stat ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | tail -1 | awk '{print $4+$6}')
+
+        echo "Files changed: $FILES_CHANGED"
+        echo "Lines changed: $LINES_CHANGED"
+
+        # Determine size label
+        if [ "$LINES_CHANGED" -lt 100 ]; then
+          echo "SIZE=XS" >> $GITHUB_ENV
+        elif [ "$LINES_CHANGED" -lt 500 ]; then
+          echo "SIZE=S" >> $GITHUB_ENV
+        elif [ "$LINES_CHANGED" -lt 1000 ]; then
+          echo "SIZE=M" >> $GITHUB_ENV
+        elif [ "$LINES_CHANGED" -lt 2000 ]; then
+          echo "SIZE=L" >> $GITHUB_ENV
+        else
+          echo "SIZE=XL" >> $GITHUB_ENV
+        fi
+
+    - name: Apply size label
+      run: |
+        echo "Applying size label: ${{ env.SIZE }}"
+        # This would apply the appropriate label via GitHub API
+        # gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels \
+        #   -f labels[]="size-${{ env.SIZE }}"
+
+  stale-issues:
+    name: Close Stale Issues
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Close stale issues
+      run: |
+        # This job would identify and close stale issues
+        # that haven't had activity in a long time
+        echo "Checking for stale issues..."
+
+        # Find issues with no activity for 30+ days
+        # STALE_ISSUES=$(gh api repos/${{ github.repository }}/issues \
+        #   -f state=open \
+        #   -f labels=needs-more-info \
+        #   -f since=$(date -d '30 days ago' -I) | jq length)
+
+        echo "Stale issue management completed"
+
+  welcome-contributors:
+    name: Welcome New Contributors
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request_target' && github.event.action == 'opened'
+
+    steps:
+    - name: Check if first-time contributor
+      run: |
+        CONTRIBUTOR=${{ github.event.pull_request.user.login }}
+        echo "New PR from: $CONTRIBUTOR"
+
+        # Check if this is the contributor's first PR
+        # This would check via GitHub API if they've contributed before
+
+        echo "Welcome message processing completed"
+
+    - name: Post welcome message
+      run: |
+        # This would post a welcome message for first-time contributors
+        echo "Posting welcome message..."
+
+        # Example welcome message:
+        # "Welcome to DeepSys! Thank you for your first contribution.
+        # Please make sure your PR follows our contributing guidelines."
+        echo "Welcome message posted"

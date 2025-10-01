@@ -1,0 +1,2 @@
+/usr/bin/ar qc ../lib/libdeepsys_core.a CMakeFiles/deepsys_core.dir/src/types.cpp.o CMakeFiles/deepsys_core.dir/src/logger.cpp.o
+/usr/bin/ranlib ../lib/libdeepsys_core.a

@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/deepsys_example.dir/example_usage.cpp.o -o bin/deepsys_example  lib/libdeepsys_core.a
