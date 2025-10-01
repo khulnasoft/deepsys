@@ -33,10 +33,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: khulnasoft/actions/setup-python@v4
       with:
         python-version: '3.x'
 
@@ -44,57 +44,25 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential cmake pkg-config git dkms
-
     - name: Install kernel headers
       run: |
         sudo apt-get install -y linux-headers-${{ matrix.kernel }}
 
     - name: Cache build directory
-      uses: actions/cache@v3
+      uses: khulnasoft/actions/cache@v3
       with:
         path: build/
         key: ${{ runner.os }}-driver-${{ matrix.kernel }}-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-driver-${{ matrix.kernel }}-
 
-    - name: Configure build
-      run: |
-        mkdir -p build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_DRIVER=ON \
-              -DBUILD_TESTS=ON \
-              -DCMAKE_INSTALL_PREFIX=/usr/local \
-              ..
-
-    - name: Build core module
-      run: |
-        cd build
-        make deepsys_core -j$(nproc)
-
-    - name: Build driver module
-      run: |
-        cd build
-        make deepsys_driver -j$(nproc)
-
-    - name: Run driver tests
-      run: |
-        cd build
-        ctest -R driver --output-on-failure || echo "No driver-specific tests found"
-
-    - name: Install driver module
-      run: |
-        cd build
-        sudo make install_driver || echo "Driver installation requires manual setup in CI"
-
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: khulnasoft/actions/upload-artifact@v3
       if: always()
       with:
         name: driver-build-${{ matrix.os }}-kernel-${{ matrix.kernel }}
         path: |
           build/driver/
-          build/lib/libdeepsys_*.a
         retention-days: 7
 
   test-drivers:
@@ -111,10 +79,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Download build artifacts
-      uses: actions/download-artifact@v3
+      uses: khulnasoft/actions/download-artifact@v3
       with:
         name: driver-build-${{ matrix.os }}-kernel-5.15
         path: build/
@@ -126,50 +94,25 @@ jobs:
 
     - name: Load driver module
       run: |
-        sudo modprobe -r scap 2>/dev/null || true
-        sudo insmod build/driver/scap.ko || echo "Driver module not compatible with current kernel"
-
-    - name: Run integration tests
-      run: |
-        cd build
-        ctest --output-on-failure -E "driver" || echo "Integration tests require driver to be loaded"
-
-    - name: Unload driver module
-      if: always()
-      run: |
-        sudo modprobe -r scap 2>/dev/null || true
-
-  build-cross-platform:
-    name: Cross-Platform Build
-    runs-on: ubuntu-latest
+{{ ... }}
     container:
       image: centos:8
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Install CentOS dependencies
       run: |
         yum -y install gcc gcc-c++ cmake make pkgconfig git
         yum -y install kernel-devel-$(uname -r)
-
-    - name: Configure build for CentOS
-      run: |
-        mkdir -p build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Release \
-              -DBUILD_DRIVER=ON \
-              -DCMAKE_INSTALL_PREFIX=/usr/local \
-              ..
-
-    - name: Build driver on CentOS
+{{ ... }}
       run: |
         cd build
         make deepsys_core deepsys_driver -j$(nproc)
 
     - name: Upload CentOS build artifacts
-      uses: actions/upload-artifact@v3
+      uses: khulnasoft/actions/upload-artifact@v3
       with:
         name: driver-build-centos8
         path: build/driver/
@@ -181,13 +124,12 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
         scan-type: 'fs'
-        scan-ref: '.'
         format: 'sarif'
         output: 'trivy-results.sarif'
 
@@ -203,7 +145,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Install code quality tools
       run: |

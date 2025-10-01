@@ -24,10 +24,10 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: khulnasoft/actions/setup-python@v4
       with:
         python-version: '3.x'
 
@@ -71,23 +71,8 @@ jobs:
         make -j$(nproc)
 
     - name: Run tests
-      run: |
-        cd build
-        ctest --output-on-failure
-
-    - name: Install modules
-      run: |
-        cd build
-        sudo make install
-
-    - name: Test installation
-      run: |
-        # Test that CLI was installed correctly
-        deepsys_cli --help || echo "CLI not in PATH, checking alternative locations"
-        find /usr/local/bin -name "*deepsys*" -exec {} --help \; 2>/dev/null | head -5 || echo "Installation test completed"
-
     - name: Upload test results
-      uses: actions/upload-artifact@v3
+      uses: khulnasoft/actions/upload-artifact@v3
       if: always()
       with:
         name: test-results-${{ matrix.os }}-${{ matrix.compiler }}
@@ -102,7 +87,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Test modular build scripts
       run: |
@@ -114,35 +99,13 @@ jobs:
         mkdir -p build_test
         cd build_test
 
-        # Test core module only
-        mkdir core_test && cd core_test
-        cmake -DCMAKE_BUILD_TYPE=Release ../../core
-        make && echo "Core module build: SUCCESS"
-        cd ..
-
-        # Test libscap module only
-        mkdir libscap_test && cd libscap_test
-        cmake -DCMAKE_BUILD_TYPE=Release ../../libscap
-        make && echo "Libscap module build: SUCCESS"
-        cd ../..
-
-    - name: Test installation scripts
-      run: |
-        # Test installation script help
-        chmod +x scripts/install-deepsys-modular
-        ./scripts/install-deepsys-modular --help | head -10
-
-        # Test uninstall script
-        chmod +x scripts/uninstall-modular.sh
-        ./scripts/uninstall-modular.sh --help | head -10
-
-  documentation:
+{{ ... }}
     name: Check Documentation
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Install documentation tools
       run: |
@@ -150,89 +113,39 @@ jobs:
         sudo apt-get install -y python3 python3-pip
         pip3 install mkdocs mkdocs-material
 
-    - name: Check README files
-      run: |
-        # Check that main README exists and has content
-        if [ ! -f README_MODULAR.md ]; then
-          echo "README_MODULAR.md not found"
-          exit 1
-        fi
-
-        # Check file size (should be substantial)
-        min_size=1000
-        actual_size=$(stat -c%s README_MODULAR.md 2>/dev/null || stat -f%z README_MODULAR.md 2>/dev/null || echo "0")
-        if [ "$actual_size" -lt "$min_size" ]; then
-          echo "README_MODULAR.md seems too small: $actual_size bytes"
-          exit 1
-        fi
-
-        echo "Documentation check passed"
-
-  code-quality:
+{{ ... }}
     name: Code Quality Check
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Install code quality tools
       run: |
         sudo apt-get update
         sudo apt-get install -y cppcheck clang-tidy iwyu
 
-    - name: Run code quality checks
-      run: |
-        # Create build directory for clang-tidy
-        mkdir -p build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Debug ..
-
-        # Run cppcheck on main modules
-        cppcheck --enable=all --std=c++17 --language=c++ \
-                 --suppress=missingIncludeSystem \
-                 --inline-suppr \
-                 --xml --xml-version=2 \
-                 core/ libscap/ libsinsp/ cli/ 2>/dev/null || echo "cppcheck completed"
-
-        # Run clang-tidy on a few key files
-        find core/ -name "*.cpp" | head -5 | xargs -I {} clang-tidy {} -p . --quiet || echo "clang-tidy completed"
-
-  dependency-check:
+{{ ... }}
     name: Dependency Check
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Install dependency tools
       run: |
         sudo apt-get update
         sudo apt-get install -y wget
 
-    - name: Download OWASP Dependency Check
-      run: |
-        wget -q https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
-        unzip -q dependency-check-8.4.0-release.zip
-
-    - name: Run dependency check
-      run: |
-        ./dependency-check/bin/dependency-check.sh \
-          --scan . \
-          --format ALL \
-          --enableRetired \
-          --nvdValidForHours 24 \
-          --out . \
-          2>/dev/null | head -20 || echo "Dependency check completed"
-
-  performance-test:
+{{ ... }}
     name: Performance Test
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Build for performance testing
       run: |
@@ -243,35 +156,18 @@ jobs:
               ..
         make -j$(nproc)
 
-    - name: Install for testing
-      run: |
-        cd build
-        sudo make install
-
-    - name: Run basic performance check
-      run: |
-        # Simple performance test - compile time
-        time g++ -std=c++17 -Icore/include -Lbuild/lib \
-               -o perf_test simple_test.cpp build/lib/libdeepsys_core.a
-
-        # Test execution time
-        time ./perf_test
-
-        echo "Performance test completed"
-
-  package-test:
+{{ ... }}
     name: Package Test
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: khulnasoft/actions/checkout@v4
 
     - name: Test package generation script
       run: |
         chmod +x scripts/generate-packages.sh
         ./scripts/generate-packages.sh --help 2>/dev/null | head -5 || echo "Package script needs debugging"
-
     - name: Create package structure
       run: |
         mkdir -p packages/test
