@@ -1,5 +1,26 @@
 #!/bin/bash
-
+#
+# This script runs deepsys on all the trace files (i.e. all the files with scap 
+# extension) in the current directory, and compares the result with the one of 
+# a previous run.
+#
+# Arguments:
+#  - deepsys path
+#  - deepsys chisels directory
+#  - deepsys command line
+#  - traces directory
+#  - prefix of the result directory (it will be completed with the current 
+#    date/time)
+#  - directory to use as a reference
+#
+# Examples:
+#  ./deepsys_batch_parser.sh "-p%thread.exectime" exetime exetime_2014-04-28_10-18-30
+#  ./deepsys_batch_parser.sh "-ctopconns" topconns topconns_2014-04-28_02-51-34 
+#
+# Note: 
+#  if the comparison succeeds, the result directory is deleted. Otherwise, it's 
+#  kept there for reference/analysis.
+#
 set -eu
 
 DEEPSYS=$1

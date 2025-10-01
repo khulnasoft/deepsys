@@ -1,0 +1,125 @@
+#!/bin/bash
+#
+# Simple script that desperately tries to load deepsys-probe looking
+# for it in a bunch of ways. Convenient when running deepsys inside
+# a container or in other weird environments.
+#
+
+if [ $(id -u) != 0 ]; then
+	echo "Installer must be run as root (or with sudo)."
+	exit 1
+fi
+
+if ! hash lsmod > /dev/null 2>&1; then
+	echo "This program requires lsmod"
+	exit 1
+fi
+
+if ! hash modprobe > /dev/null 2>&1; then
+	echo "This program requires modprobe"
+	exit 1
+fi
+
+if ! hash rmmod > /dev/null 2>&1; then
+	echo "This program requires rmmod"
+	exit 1
+fi
+
+if ! hash curl > /dev/null 2>&1; then
+	echo "This program requires curl"
+	exit 1
+fi
+
+ARCH=$(uname -m)
+KERNEL_RELEASE=$(uname -r)
+SCRIPT_NAME=$(basename "$0")
+
+if [ -z "$DEEPSYS_REPOSITORY" ]; then
+	DEEPSYS_REPOSITORY="stable"
+fi
+
+if [ "$SCRIPT_NAME" = "deepsys-probe-loader" ]; then
+	DEEPSYS_VERSION=$(deepsys --version | cut -d' ' -f3)	
+	PROBE_NAME="deepsys-probe"
+	PACKAGE_NAME="deepsys"
+elif [ "$SCRIPT_NAME" = "deepsyscloud-probe-loader" ]; then
+	DEEPSYS_VERSION=$(/opt/draios/bin/dragent --version)
+	PROBE_NAME="deepsyscloud-probe"
+	PACKAGE_NAME="draios-agent"
+elif [ "$SCRIPT_NAME" = "falco-probe-loader" ]; then
+	DEEPSYS_VERSION=$(falco --version | cut -d' ' -f3)
+	PROBE_NAME="falco-probe"
+	PACKAGE_NAME="falco"
+else
+	echo "This script must be called as deepsys-probe-loader, deepsyscloud-probe-loader, or falco-probe-loader"
+	exit 1
+fi
+
+echo "* Unloading $PROBE_NAME, if present"
+rmmod $PROBE_NAME
+
+if lsmod | grep $(echo $PROBE_NAME | tr "-" "_") > /dev/null 2>&1; then
+	echo "* $PROBE_NAME seems to still be loaded, hoping the best"
+	exit 0
+fi
+
+echo "* Running dkms autoinstall"
+dkms autoinstall --kernelver $KERNEL_RELEASE
+
+echo "* Trying to load a system $PROBE_NAME, if present"
+
+if modprobe $PROBE_NAME > /dev/null 2>&1; then
+	echo "$PROBE_NAME found and loaded with modprobe"
+	exit 0
+fi
+
+echo "* Trying to load a dkms $PROBE_NAME, if present"
+
+if insmod /var/lib/dkms/$PACKAGE_NAME/$DEEPSYS_VERSION/$KERNEL_RELEASE/$ARCH/module/$PROBE_NAME.ko > /dev/null 2>&1; then
+	echo "$PROBE_NAME found and loaded in dkms"
+	exit 0
+fi
+
+echo "* Trying to find precompiled $PROBE_NAME for $KERNEL_RELEASE"
+
+if [ -f /proc/config.gz ]; then
+	echo "Found kernel config at /proc/config.gz"
+	HASH=$(zcat /proc/config.gz | md5sum - | cut -d' ' -f1)
+elif [ -f /boot/config-$KERNEL_RELEASE ]; then
+	echo "Found kernel config at /boot/config-$KERNEL_RELEASE"
+	HASH=$(md5sum /boot/config-$KERNEL_RELEASE | cut -d' ' -f1)
+elif [ ! -z "$DEEPSYS_HOST_ROOT" ] && [ -f $DEEPSYS_HOST_ROOT/boot/config-$KERNEL_RELEASE ]; then
+	echo "Found kernel config at $DEEPSYS_HOST_ROOT/boot/config-$KERNEL_RELEASE"
+	HASH=$(md5sum $DEEPSYS_HOST_ROOT/boot/config-$KERNEL_RELEASE | cut -d' ' -f1)
+elif [ -f /usr/lib/ostree-boot/config-$KERNEL_RELEASE ]; then
+	echo "Found kernel config at /usr/lib/ostree-boot/config-$KERNEL_RELEASE"
+	HASH=$(md5sum /usr/lib/ostree-boot/config-$KERNEL_RELEASE | cut -d' ' -f1)
+elif [ ! -z "$DEEPSYS_HOST_ROOT" ] && [ -f $DEEPSYS_HOST_ROOT/usr/lib/ostree-boot/config-$KERNEL_RELEASE ]; then
+	echo "Found kernel config at $DEEPSYS_HOST_ROOT/usr/lib/ostree-boot/config-$KERNEL_RELEASE"
+        HASH=$(md5sum $DEEPSYS_HOST_ROOT/usr/lib/ostree-boot/config-$KERNEL_RELEASE | cut -d' ' -f1)
+fi
+
+if [ -z "$HASH" ]; then
+	echo "Cannot find kernel config"
+	exit 1
+fi
+
+DEEPSYS_PROBE_FILENAME="$PROBE_NAME-$DEEPSYS_VERSION-$ARCH-$KERNEL_RELEASE-$HASH.ko"
+
+if [ -f ~/.deepsys/$DEEPSYS_PROBE_FILENAME ]; then
+	echo "Found precompiled module at ~/.deepsys/$DEEPSYS_PROBE_FILENAME, loading module"
+	insmod ~/.deepsys/$DEEPSYS_PROBE_FILENAME
+	exit $?
+fi
+
+URL=$(echo https://s3.amazonaws.com/download.draios.com/$DEEPSYS_REPOSITORY/deepsys-probe-binaries/$DEEPSYS_PROBE_FILENAME | sed s/+/%2B/g)
+
+echo "* Trying to download precompiled module from $URL"
+if curl --create-dirs -f -s -o ~/.deepsys/$DEEPSYS_PROBE_FILENAME $URL; then
+	echo "Download succeeded, loading module"
+	insmod ~/.deepsys/$DEEPSYS_PROBE_FILENAME
+	exit $?
+else
+	echo "Download failed, consider compiling your own $PROBE_NAME and loading it or getting in touch with the deepsys community"
+	exit 1
+fi
