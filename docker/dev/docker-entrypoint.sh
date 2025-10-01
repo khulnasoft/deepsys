@@ -3,13 +3,10 @@
 
 echo "* Setting up /usr/src links from host"
 
-if [ -d "$DEEPSYS_HOST_ROOT/usr/src" ]; then
-    for i in "$DEEPSYS_HOST_ROOT"/usr/src/*; do
-        if [ -e "$i" ]; then
-            ln -s "$i" /usr/src/
-        fi
-    done
-fi
+for i in $DEEPSYS_HOST_ROOT/usr/src/*
+do
+	ln -s "$i" /usr/src/
+done
 
 /usr/bin/deepsys-probe-loader
 
