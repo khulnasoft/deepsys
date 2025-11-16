@@ -464,8 +464,8 @@ dependencies = [
  "clap",
  "deepsys-cache",
  "deepsys-cli",
- "deepsys-sast",
  "deepsys-misconf",
+ "deepsys-sast",
  "deepsys-secret",
  "deepsys-types",
  "deepsys-vulnerability",
@@ -524,25 +524,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "deepsys-sast"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "deepsys-types",
- "futures",
- "regex",
- "serde",
- "serde_json",
- "serde_yaml",
- "thiserror",
- "tokio",
- "toml",
- "tracing",
- "walkdir",
-]
-
-[[package]]
 name = "deepsys-misconf"
 version = "0.1.0"
 dependencies = [
@@ -566,6 +547,25 @@ dependencies = [
  "tracing",
  "walkdir",
  "yaml-rust",
+]
+
+[[package]]
+name = "deepsys-sast"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "deepsys-types",
+ "futures",
+ "regex",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "thiserror",
+ "tokio",
+ "toml",
+ "tracing",
+ "walkdir",
 ]
 
 [[package]]
