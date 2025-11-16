@@ -1,0 +1,93 @@
+[workspace]
+members = [
+    "crates/types",
+    "crates/cli",
+    "crates/attestation",
+    "crates/cache",
+    "crates/clock",
+    "crates/cloud",
+    "crates/compliance",
+    "crates/config",
+    "crates/db",
+    "crates/dependency",
+    "crates/digest",
+    "crates/downloader",
+    "crates/extension",
+    "crates/sast",
+    "crates/iac",
+    "crates/javadb",
+    "crates/k8s",
+    "crates/licensing",
+    "crates/mapfs",
+    "crates/misconf",
+    "crates/module",
+    "crates/notification",
+    "crates/parallel",
+    "crates/plugin",
+    "crates/policy",
+    "crates/purl",
+    "crates/rekor",
+    "crates/rekortest",
+    "crates/remote",
+    "crates/report",
+    "crates/rpc",
+    "crates/sbom",
+    "crates/scan",
+    "crates/semaphore",
+    "crates/types",
+    "crates/utils",
+    "crates/uuid",
+    "crates/version",
+    "crates/vulnerability",
+    "crates/x"
+]
+resolver = "2"
+
+[package]
+name = "deepsys"
+version = "0.1.0"
+edition = "2024"
+description = "Deep security scanner - Rust implementation of Deepsys"
+authors = ["DeepSys Team"]
+license = "Apache-2.0"
+keywords = ["security", "scanner", "vulnerability", "container", "k8s"]
+categories = ["command-line-utilities", "development-tools"]
+repository = "https://github.com/khulnasoft/deepsys"
+
+# Binary configuration
+[[bin]]
+name = "deepsys"
+path = "src/main.rs"
+
+[dependencies]
+# CLI dependencies
+clap = { version = "4.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Core functionality
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+regex = "1.0"
+
+# Async runtime and traits
+futures = "0.3"
+async-trait = "0.1"
+
+# Utilities
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Local crate dependencies
+deepsys-types = { path = "crates/types" }
+deepsys-cli = { path = "crates/cli" }
+deepsys-sast = { path = "crates/sast" }
+deepsys-vulnerability = { path = "crates/vulnerability" }
+deepsys-secret = { path = "crates/secret" }
+deepsys-misconf = { path = "crates/misconf" }
+deepsys-cache = { path = "crates/cache" }
